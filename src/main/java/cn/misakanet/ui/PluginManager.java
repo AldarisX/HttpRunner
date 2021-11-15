@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PluginManager {
@@ -20,11 +21,7 @@ public class PluginManager {
     private HttpRunnerUI ui;
 
     private PluginManager() {
-        try {
-            groovyShell.getClassLoader().addURL(new File("./libs").toURI().toURL());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        setExtCP(new File("./libs"));
     }
 
     public synchronized static PluginManager getInstance() {
@@ -33,6 +30,25 @@ public class PluginManager {
         }
 
         return pluginManager;
+    }
+
+    /**
+     * 设置额外的class path
+     *
+     * @param dir class path路径
+     */
+    public void setExtCP(File dir) {
+        try {
+            groovyShell.getClassLoader().addURL(dir.toURI().toURL());
+
+            for (File cpFile : Objects.requireNonNull(dir.listFiles())) {
+                if (cpFile.getName().endsWith(".jar")) {
+                    groovyShell.getClassLoader().addURL(cpFile.toURI().toURL());
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
     protected synchronized void loadPlugin() {
