@@ -52,6 +52,8 @@ public class ScriptUtil {
     public void setExtCP(File dir) {
         extCPDir = dir;
         try {
+            groovyShell.getClassLoader().addURL(new File("./libs").toURI().toURL());
+
             groovyShell.getClassLoader().addURL(dir.toURI().toURL());
 
             for (File cpFile : Objects.requireNonNull(extCPDir.listFiles())) {

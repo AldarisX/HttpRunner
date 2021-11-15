@@ -4,6 +4,8 @@ setting.properties
 
 .idea/
 
+libs/
+
 target/
 
 data/

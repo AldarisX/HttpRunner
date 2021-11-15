@@ -6,6 +6,7 @@ import groovy.lang.Script;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -19,6 +20,11 @@ public class PluginManager {
     private HttpRunnerUI ui;
 
     private PluginManager() {
+        try {
+            groovyShell.getClassLoader().addURL(new File("./libs").toURI().toURL());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
     public synchronized static PluginManager getInstance() {
