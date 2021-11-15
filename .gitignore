@@ -1,0 +1,11 @@
+setting.properties
+
+*.iml
+
+.idea/
+
+target/
+
+data/
+
+script/
