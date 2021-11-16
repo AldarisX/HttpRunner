@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptUtil {
@@ -55,7 +54,11 @@ public class ScriptUtil {
         try {
             groovyShell.getClassLoader().addURL(dir.toURI().toURL());
 
-            for (File cpFile : Objects.requireNonNull(extCPDir.listFiles())) {
+            File[] childFiles = extCPDir.listFiles();
+            if (childFiles == null) {
+                return;
+            }
+            for (File cpFile : childFiles) {
                 if (cpFile.getName().endsWith(".jar")) {
                     groovyShell.getClassLoader().addURL(cpFile.toURI().toURL());
                 }

@@ -10,7 +10,6 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PluginManager {
@@ -41,7 +40,11 @@ public class PluginManager {
         try {
             groovyShell.getClassLoader().addURL(dir.toURI().toURL());
 
-            for (File cpFile : Objects.requireNonNull(dir.listFiles())) {
+            File[] childFiles = dir.listFiles();
+            if (childFiles == null) {
+                return;
+            }
+            for (File cpFile : childFiles) {
                 if (cpFile.getName().endsWith(".jar")) {
                     groovyShell.getClassLoader().addURL(cpFile.toURI().toURL());
                 }
