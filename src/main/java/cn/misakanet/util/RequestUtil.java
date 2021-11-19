@@ -11,6 +11,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
@@ -55,7 +56,11 @@ public class RequestUtil {
                             .build();
 
             BasicHttpClientConnectionManager connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry);
-            return HttpClients.custom().setSSLSocketFactory(sslSF).setConnectionManager(connectionManager).build();
+            return HttpClients.custom()
+                    .setSSLSocketFactory(sslSF)
+                    .setConnectionManager(connectionManager)
+                    .setRedirectStrategy(new DefaultRedirectStrategy(new String[]{}))
+                    .build();
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             throw new RuntimeException(e);
         }
