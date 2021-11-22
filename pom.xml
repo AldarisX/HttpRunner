@@ -72,10 +72,11 @@
             <artifactId>commons-text</artifactId>
             <version>1.9</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.formdev/flatlaf -->
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.4</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.intellij/forms_rt -->
         <dependency>
@@ -126,6 +127,11 @@
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+        </repository>
+        <repository>
+            <id>maven_central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
 
