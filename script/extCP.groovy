@@ -39,11 +39,9 @@ DefaultListModel<String> queryClass(String targetClazzName, DefaultListModel<Str
                     final String path = file.toString().replace('/', '.')
                     final String name = path.substring(path.indexOf(pkgName), path.length() - extension.length())
                     clazzName = name.replaceAll("\\\\", ".")
-                    if (clazzName.contains(targetClazzName)) {
-                        target.addElement(getClass().getClassLoader().loadClass(clazzName).getName())
-                        if (target.size() >= 250) {
-                            throw new RuntimeException("stop")
-                        }
+                    target.addElement(getClass().getClassLoader().loadClass(clazzName).getName())
+                    if (target.size() >= 250) {
+                        throw new RuntimeException("stop")
                     }
                 } catch (NoClassDefFoundError | ClassNotFoundException | StringIndexOutOfBoundsException | ArrayIndexOutOfBoundsException | NullPointerException ignored) {
                     //println(e)
@@ -57,7 +55,6 @@ DefaultListModel<String> queryClass(String targetClazzName, DefaultListModel<Str
             }
         }
     })
-
 
     return target
 }
