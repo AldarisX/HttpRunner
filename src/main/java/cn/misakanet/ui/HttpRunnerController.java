@@ -37,8 +37,6 @@ public class HttpRunnerController {
     private final File envFile = new File("./script/env.groovy");
     private final File scriptFile = new File("./script/script.groovy");
     private final File scriptShell = new File("./script/shell");
-    private final UndoManager undoManager = new UndoManager();
-    JFileChooser chooser = new JFileChooser();
     private HttpRunnerUI ui;
 
     private HttpRunnerController() {
@@ -340,6 +338,7 @@ public class HttpRunnerController {
     }
 
     public void addUndoRedo(JTextComponent component) {
+        UndoManager undoManager = new UndoManager();
         component.getDocument().addUndoableEditListener(e -> undoManager.addEdit(e.getEdit()));
         component.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), "Undo");
         component.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), "Redo");
