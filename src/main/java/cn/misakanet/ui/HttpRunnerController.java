@@ -6,6 +6,7 @@ import cn.misakanet.util.FileUtil;
 import cn.misakanet.util.RequestUtil;
 import cn.misakanet.util.ScriptUtil;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -129,6 +130,17 @@ public class HttpRunnerController {
             e.printStackTrace();
         } finally {
             ui.btnSend.setEnabled(true);
+        }
+    }
+
+    public void setResult(String data, String type) {
+        try {
+            if (type.contains("json")) {
+                var dataJson = gsonPretty.fromJson(data, JsonElement.class);
+                ui.taResult.setText(gsonPretty.toJson(dataJson));
+            }
+        } catch (Exception e) {
+            ui.taResult.setText(data);
         }
     }
 

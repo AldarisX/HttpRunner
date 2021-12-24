@@ -157,5 +157,4 @@ public class ClassGetUI extends JDialog {
     public JComponent $$$getRootComponent$$$() {
         return contentPane;
     }
-
 }
