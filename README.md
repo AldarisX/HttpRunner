@@ -4,7 +4,8 @@ HttpRunner是一款请求工具，想让测试时更轻松
 
 ## 使用到的关键依赖
 
-* JDK17(java.base,java.sql,java.management,java.desktop,java.logging)
+* JDK17(
+  java.base,java.compiler,java.desktop,java.management.rmi,java.naming,java.prefs,java.scripting,java.security.jgss,java.sql)
 * groovy(大部分groovy模块都引入了)
 * httpclient
 * gson、fastjson
