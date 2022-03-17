@@ -119,17 +119,20 @@ public class ScriptUtil {
         if (scriptData == null) {
             throw new UIException("script data is null!!!");
         }
-        if (scriptData instanceof File scriptFile) {
+        if (scriptData instanceof File) {
+            File scriptFile = (File) scriptData;
             if (!scriptFile.exists()) {
                 throw new UIException("can`t find script: " + scriptFile.getAbsolutePath());
             }
             return parse(scriptPath, scriptFile);
-        } else if (scriptData instanceof String scriptStr) {
+        } else if (scriptData instanceof String) {
+            String scriptStr = (String) scriptData;
             if (StringUtils.isBlank(scriptStr)) {
                 throw new UIException("script is blank");
             }
             return parse(scriptPath, scriptStr);
-        } else if (scriptData instanceof Reader reader) {
+        } else if (scriptData instanceof Reader) {
+            Reader reader = (Reader) scriptData;
             return parse(scriptPath, reader);
         }
         throw new UIException("script data not support: " + scriptData.getClass().getName());

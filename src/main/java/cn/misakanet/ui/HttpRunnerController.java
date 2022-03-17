@@ -92,11 +92,17 @@ public class HttpRunnerController {
                 if (method == null) {
                     throw new UIException("method is null!!!");
                 }
-                HttpUriRequest request = switch (method) {
-                    case "POST" -> new HttpPost();
-                    case "GET" -> new HttpGet();
-                    default -> throw new UIException("method not support");
-                };
+                HttpUriRequest request;
+                switch (method) {
+                    case "POST":
+                        request = new HttpPost();
+                        break;
+                    case "GET":
+                        request = new HttpGet();
+                        break;
+                    default:
+                        throw new UIException("method not support");
+                }
 
                 Map<String, Object> envMap;
                 String env = getCurrentEnv();

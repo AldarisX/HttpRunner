@@ -94,7 +94,7 @@ public class PluginManager {
                             var pluginFile = path.toFile();
                             System.out.println("unload plugin " + pluginFile.getName());
                             execScript(pluginFile, "destroy", null);
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     });
@@ -132,7 +132,8 @@ public class PluginManager {
     }
 
     public void removeMenu(JMenu menu) {
-        ui.menuPlugins.remove(menu);
+        if (menu != null)
+            ui.menuPlugins.remove(menu);
     }
 
     public void removeMenuItem(JMenuItem menuItem) {
