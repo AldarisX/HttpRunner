@@ -24,6 +24,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +105,7 @@ public class HttpRunnerController {
                     default:
                         throw new UIException("method not support");
                 }
+                String contentType = (String) ui.cbContentType.getSelectedItem();
 
                 Map<String, Object> envMap;
                 String env = getCurrentEnv();
@@ -118,6 +121,7 @@ public class HttpRunnerController {
                 param.put("request", request);
                 param.put("data", data);
                 param.put("envMap", envMap);
+                param.put("contentType", contentType);
 
                 scriptUtil.execScript(beforeScriptPath, param);
                 var response = httpClient.execute(request);
@@ -230,13 +234,19 @@ public class HttpRunnerController {
             }
 
             String method = (String) ui.cbMethod.getSelectedItem();
+            String contentType = (String) ui.cbContentType.getSelectedItem();
             String data = ui.taData.getText();
             //组装参数
             JsonObject configData = new JsonObject();
             configData.addProperty("url", url);
             configData.addProperty("method", method);
+            configData.addProperty("contentType", contentType);
             if (data != null) {
-                configData.add("data", gson.fromJson(data, JsonObject.class));
+                if (contentType.equals("json")) {
+                    configData.add("data", gson.fromJson(data, JsonObject.class));
+                } else {
+                    configData.addProperty("data", Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8)));
+                }
             } else {
                 configData.add("data", null);
             }
@@ -284,9 +294,16 @@ public class HttpRunnerController {
             ui.tfURL.setText(url);
             var method = configData.get("method").getAsString();
             ui.cbMethod.setSelectedItem(method);
+            var contentType = configData.get("contentType");
+            if (contentType != null)
+                ui.cbContentType.setSelectedItem(contentType.getAsString());
             var data = configData.get("data");
             if (data != null && !data.isJsonNull()) {
-                ui.taData.setText(gsonPretty.toJson(data));
+                if (contentType == null || contentType.equals("json")) {
+                    ui.taData.setText(gsonPretty.toJson(data));
+                } else {
+                    ui.taData.setText(new String(Base64.getDecoder().decode(data.getAsString()), StandardCharsets.UTF_8));
+                }
             } else {
                 ui.taData.setText("");
             }
@@ -300,7 +317,8 @@ public class HttpRunnerController {
             Map<String, Object> result = new HashMap<>();
             result.put("url", url);
             result.put("method", method);
-            result.put("data", data);
+            if (data != null)
+                result.put("data", data);
             result.put("beforeScript", beforeScript);
             result.put("afterScript", afterScript);
 

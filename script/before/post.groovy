@@ -11,6 +11,7 @@ String url = getProperty("url")
 HttpPost request = getProperty("request")
 String data = getProperty("data")
 Map<String, Object> envMap = getProperty("envMap")
+String contentType = getProperty("contentType")
 
 // 获取envMap并设置参数
 if (envMap != null) {
@@ -36,7 +37,17 @@ println(request.getAllHeaders())
 // 配置参数
 StringEntity entity = new StringEntity(data, StandardCharsets.UTF_8)
 entity.setContentEncoding("UTF-8")
-entity.setContentType("application/json")
+switch (contentType) {
+    case "json":
+        entity.setContentType("application/json")
+        break
+    case "xml":
+        entity.setContentType("application/xml")
+        break
+    default:
+        entity.setContentType("application/text")
+        break
+}
 request.setEntity(entity)
 
 println("beforeScript end")
