@@ -299,7 +299,7 @@ public class HttpRunnerController {
                 ui.cbContentType.setSelectedItem(contentType.getAsString());
             var data = configData.get("data");
             if (data != null && !data.isJsonNull()) {
-                if (contentType == null || contentType.equals("json")) {
+                if (contentType == null || contentType.getAsString().equals("json")) {
                     ui.taData.setText(gsonPretty.toJson(data));
                 } else {
                     ui.taData.setText(new String(Base64.getDecoder().decode(data.getAsString()), StandardCharsets.UTF_8));
