@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -60,6 +61,7 @@ public class HttpRunnerController {
      * 发送请求
      */
     public void send() {
+        CloseableHttpResponse response = null;
         try {
             String url = ui.tfURL.getText();
             if (StringUtils.isBlank(url)) {
@@ -124,7 +126,7 @@ public class HttpRunnerController {
                 param.put("contentType", contentType);
 
                 scriptUtil.execScript(beforeScriptPath, param);
-                var response = httpClient.execute(request);
+                response = httpClient.execute(request);
 
                 param.put("response", response);
                 scriptUtil.execScript(afterScriptPath, param);
@@ -139,6 +141,13 @@ public class HttpRunnerController {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             ui.btnSend.setEnabled(true);
         }
     }
