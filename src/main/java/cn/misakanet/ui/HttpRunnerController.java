@@ -126,7 +126,10 @@ public class HttpRunnerController {
                 param.put("contentType", contentType);
 
                 scriptUtil.execScript(beforeScriptPath, param);
+                long startTime = System.currentTimeMillis();
                 response = httpClient.execute(request);
+                long endTime = System.currentTimeMillis();
+                System.out.println("exec time: " + (endTime - startTime) + "ms");
 
                 param.put("response", response);
                 scriptUtil.execScript(afterScriptPath, param);
