@@ -22,6 +22,7 @@ import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +42,8 @@ public class HttpRunnerController {
     private final File envFile = new File("./script/env.groovy");
     private final File scriptFile = new File("./script/script.groovy");
     private final File scriptShell = new File("./script/shell");
+    private File beforeScript;
+    private File afterScript;
     private HttpRunnerUI ui;
 
     private HttpRunnerController() {
@@ -72,22 +75,16 @@ public class HttpRunnerController {
             RequestUtil requestUtil = RequestUtil.getInstance();
             var httpClient = requestUtil.getClient();
 
-            var before = ui.jtBefore.getLastSelectedPathComponent();
-            if (before == null) {
+            if (beforeScript == null) {
                 System.err.println("先选择beforeScript");
                 return;
             }
-            String beforeScriptPath = scriptUtil.execScript(scriptFile, "getScriptPath", before, "./script/before/");
-            var after = ui.jtAfter.getLastSelectedPathComponent();
-            if (after == null) {
+            if (afterScript == null) {
                 System.err.println("先选择afterScript");
                 return;
             }
-            String afterScriptPath = scriptUtil.execScript(scriptFile, "getScriptPath", after, "./script/after/");
-
 
             String data = ui.taData.getText();
-
 
             System.out.println();
             ui.btnSend.setEnabled(false);
@@ -125,21 +122,21 @@ public class HttpRunnerController {
                 param.put("envMap", envMap);
                 param.put("contentType", contentType);
 
-                scriptUtil.execScript(beforeScriptPath, param);
+                scriptUtil.execScript(beforeScript.getPath(), param);
                 long startTime = System.currentTimeMillis();
                 response = httpClient.execute(request);
                 long endTime = System.currentTimeMillis();
                 System.out.println("exec time: " + (endTime - startTime) + "ms");
 
                 param.put("response", response);
-                scriptUtil.execScript(afterScriptPath, param);
+                scriptUtil.execScript(afterScript.getPath(), param);
 
                 response.close();
             } catch (UIException | IOException e) {
                 System.err.println(e.getMessage());
             }
 
-        } catch (UIException | IOException e) {
+        } catch (UIException e) {
             System.err.println(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
@@ -218,9 +215,27 @@ public class HttpRunnerController {
      * 重载脚本
      */
     public void reloadScript() {
+        ActionListener onScriptClick = e -> {
+            if (e.getSource() instanceof JCheckBoxMenuItem) {
+                var menuItem = (JCheckBoxMenuItem) e.getSource();
+                String root = (String) menuItem.getClientProperty("root");
+                File file = (File) menuItem.getClientProperty("file");
+                try {
+                    if (root.equals("before")) {
+                        beforeScript = file;
+                        scriptUtil.execScript(scriptFile, "setScriptSelect", ui.menuBefore, menuItem);
+                    } else if (root.equals("after")) {
+                        afterScript = file;
+                        scriptUtil.execScript(scriptFile, "setScriptSelect", ui.menuAfter, menuItem);
+                    }
+                } catch (IOException ex) {
+                    System.err.println(ex.getMessage());
+                }
+            }
+        };
         try {
-            scriptUtil.execScript(scriptFile, "loadScriptList", ui.jtBefore, "before", "./script/before");
-            scriptUtil.execScript(scriptFile, "loadScriptList", ui.jtAfter, "after", "./script/after");
+            scriptUtil.execScript(scriptFile, "loadScriptList", ui.menuBefore, "before", "./script/before", onScriptClick);
+            scriptUtil.execScript(scriptFile, "loadScriptList", ui.menuAfter, "after", "./script/after", onScriptClick);
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
@@ -262,18 +277,16 @@ public class HttpRunnerController {
             } else {
                 configData.add("data", null);
             }
-            var before = ui.jtBefore.getLastSelectedPathComponent();
-            if (before == null) {
+            if (beforeScript == null) {
                 System.err.println("先选择beforeScript");
                 return;
             }
-            configData.addProperty("beforeScript", (String) scriptUtil.execScript(scriptFile, "getScriptPath", before, null));
-            var after = ui.jtAfter.getLastSelectedPathComponent();
-            if (after == null) {
+            configData.addProperty("beforeScript", beforeScript.getPath());
+            if (afterScript == null) {
                 System.err.println("先选择afterScript");
                 return;
             }
-            configData.addProperty("afterScript", (String) scriptUtil.execScript(scriptFile, "getScriptPath", after, null));
+            configData.addProperty("afterScript", afterScript.getPath());
 
             if (file.exists()) {
                 if (!file.delete()) {
@@ -319,10 +332,10 @@ public class HttpRunnerController {
             } else {
                 ui.taData.setText("");
             }
-            var beforeScript = configData.get("beforeScript").getAsString();
-            scriptUtil.execScript(scriptFile, "setScriptTree", ui.jtBefore, beforeScript);
-            var afterScript = configData.get("afterScript").getAsString();
-            scriptUtil.execScript(scriptFile, "setScriptTree", ui.jtAfter, afterScript);
+            var beforeScript = new File(configData.get("beforeScript").getAsString());
+            scriptUtil.execScript(scriptFile, "setScriptSelect", ui.menuBefore, beforeScript);
+            var afterScript = new File(configData.get("afterScript").getAsString());
+            scriptUtil.execScript(scriptFile, "setScriptSelect", ui.menuAfter, afterScript);
 
             System.out.println("加载配置: " + file.getAbsolutePath());
 
@@ -341,6 +354,10 @@ public class HttpRunnerController {
         }
 
         return null;
+    }
+
+    public void setData(String data) {
+        ui.taData.setText(data);
     }
 
     /**

@@ -41,8 +41,6 @@ public class HttpRunnerUI {
     protected JButton btnSend;
     protected JTextArea taData;
     protected JTextArea taResult;
-    protected JTree jtBefore;
-    protected JTree jtAfter;
     protected JTextPane tpConsole;
     protected JButton btnClearScriptCache;
     protected JComboBox<String> cbMethod;
@@ -78,6 +76,9 @@ public class HttpRunnerUI {
     protected JMenu menuPlugin;
     protected JMenuItem menuPluginReload;
     protected JMenuItem menuPluginUnload;
+    protected JMenu menuBefore;
+    protected JMenu menuAfter;
+    private JTree jtData;
     private UIConsoleOutputStream sysOut;
     private UIConsoleOutputStream errOut;
     private Gson gson;
@@ -89,11 +90,13 @@ public class HttpRunnerUI {
         try {
             String theme = config.get(Config.THEME);
             UIManager.setLookAndFeel(Objects.requireNonNullElseGet(theme, UIManager::getSystemLookAndFeelClassName));
-        } catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException |
+                 IllegalAccessException e) {
             e.printStackTrace();
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                     UnsupportedLookAndFeelException ex) {
                 ex.printStackTrace();
             }
         }
@@ -185,7 +188,8 @@ public class HttpRunnerUI {
             errOut.setColor(UIManager.getColor("Actions.Red"), Color.RED);
 
             SwingUtilities.updateComponentTreeUI(frame);
-        } catch (UnsupportedLookAndFeelException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+        } catch (UnsupportedLookAndFeelException | InstantiationException | IllegalAccessException |
+                 ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
@@ -281,10 +285,6 @@ public class HttpRunnerUI {
         CompletableFuture.runAsync(() -> {
             gson = new Gson();
             gsonPretty = gson.newBuilder().setPrettyPrinting().create();
-
-            // 初始为null
-            jtBefore.setModel(null);
-            jtAfter.setModel(null);
 
             // 初始化脚本引擎,速度很慢
             scriptUtil = ScriptUtil.getInstance();
@@ -392,6 +392,12 @@ public class HttpRunnerUI {
         menuScriptClean = new JMenuItem();
         menuScriptClean.setText("清空缓存");
         menuScript.add(menuScriptClean);
+        menuBefore = new JMenu();
+        menuBefore.setText("前置脚本");
+        menuScript.add(menuBefore);
+        menuAfter = new JMenu();
+        menuAfter.setText("后置脚本");
+        menuScript.add(menuAfter);
         menuMode = new JMenu();
         menuMode.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         menuMode.setText("Mode");
@@ -504,39 +510,35 @@ public class HttpRunnerUI {
         panel4.setLayout(new GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(-1, 500), null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel4.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(250, 200), new Dimension(250, -1), 0, false));
-        jtBefore = new JTree();
-        scrollPane1.setViewportView(jtBefore);
+        panel4.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(250, 400), new Dimension(250, -1), 0, false));
+        jtData = new JTree();
+        scrollPane1.setViewportView(jtData);
         final JScrollPane scrollPane2 = new JScrollPane();
-        panel4.add(scrollPane2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(250, 200), new Dimension(250, -1), 0, false));
-        jtAfter = new JTree();
-        scrollPane2.setViewportView(jtAfter);
-        final JScrollPane scrollPane3 = new JScrollPane();
-        scrollPane3.setAutoscrolls(true);
-        scrollPane3.setVerifyInputWhenFocusTarget(true);
-        scrollPane3.setVerticalScrollBarPolicy(22);
-        panel4.add(scrollPane3, new GridConstraints(0, 1, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(500, 400), null, 0, false));
+        scrollPane2.setAutoscrolls(true);
+        scrollPane2.setVerifyInputWhenFocusTarget(true);
+        scrollPane2.setVerticalScrollBarPolicy(22);
+        panel4.add(scrollPane2, new GridConstraints(0, 1, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(500, 400), null, 0, false));
         taData = new JTextArea();
         taData.putClientProperty("html.disable", Boolean.TRUE);
-        scrollPane3.setViewportView(taData);
-        final JScrollPane scrollPane4 = new JScrollPane();
-        scrollPane4.setAutoscrolls(true);
-        scrollPane4.setVerticalScrollBarPolicy(22);
-        panel4.add(scrollPane4, new GridConstraints(0, 2, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(500, 400), null, 0, false));
+        scrollPane2.setViewportView(taData);
+        final JScrollPane scrollPane3 = new JScrollPane();
+        scrollPane3.setAutoscrolls(true);
+        scrollPane3.setVerticalScrollBarPolicy(22);
+        panel4.add(scrollPane3, new GridConstraints(0, 2, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(500, 400), null, 0, false));
         taResult = new JTextArea();
         taResult.setEditable(false);
-        scrollPane4.setViewportView(taResult);
-        final JScrollPane scrollPane5 = new JScrollPane();
-        scrollPane5.setAutoscrolls(true);
-        scrollPane5.setHorizontalScrollBarPolicy(30);
-        scrollPane5.setVerticalScrollBarPolicy(22);
-        panel1.add(scrollPane5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(960, 250), null, 0, false));
+        scrollPane3.setViewportView(taResult);
+        final JScrollPane scrollPane4 = new JScrollPane();
+        scrollPane4.setAutoscrolls(true);
+        scrollPane4.setHorizontalScrollBarPolicy(30);
+        scrollPane4.setVerticalScrollBarPolicy(22);
+        panel1.add(scrollPane4, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(960, 250), null, 0, false));
         tpConsole = new JTextPane();
         tpConsole.setEditable(false);
         tpConsole.setText("");
         tpConsole.putClientProperty("charset", "");
         tpConsole.putClientProperty("html.disable", Boolean.FALSE);
-        scrollPane5.setViewportView(tpConsole);
+        scrollPane4.setViewportView(tpConsole);
     }
 
     /**

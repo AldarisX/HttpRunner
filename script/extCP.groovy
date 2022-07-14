@@ -37,13 +37,19 @@ DefaultListModel<String> queryClass(String targetClazzName, DefaultListModel<Str
                 String clazzName = null
                 try {
                     final String path = file.toString().replace('/', '.')
-                    final String name = path.substring(path.indexOf(pkgName), path.length() - extension.length())
+                    String name
+                    if (pkg.getScheme() == "file") {
+                        name = path.substring(path.indexOf(pkgName.replace(".", FileSystems.getDefault().getSeparator())), path.length() - extension.length())
+                    } else {
+                        name = path.substring(path.indexOf(pkgName), path.length() - extension.length())
+                    }
                     clazzName = name.replaceAll("\\\\", ".")
                     target.addElement(getClass().getClassLoader().loadClass(clazzName).getName())
                     if (target.size() >= 250) {
                         throw new RuntimeException("stop")
                     }
-                } catch (NoClassDefFoundError | ClassNotFoundException | StringIndexOutOfBoundsException | ArrayIndexOutOfBoundsException | NullPointerException ignored) {
+                } catch (NoClassDefFoundError | ClassNotFoundException | StringIndexOutOfBoundsException | ArrayIndexOutOfBoundsException | NullPointerException ex) {
+                    System.err.println("${ex} \r\n ${clazzName}")
                     //println(e)
                 } catch (ClassFormatError e) {
                     System.err.println("${e} \r\n ${clazzName}")

@@ -3,6 +3,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
+import java.awt.event.ActionListener
 
 /**
  * 加载script列表
@@ -10,16 +11,43 @@ import javax.swing.tree.TreePath
  * @param rootName
  * @param scriptDir
  */
-void loadScriptList(JTree target, String rootName, String scriptLocation) {
+void loadScriptList(JMenuItem target, String rootName, String scriptLocation, ActionListener onclick) {
+    target.clear()
     File scriptDir = new File(scriptLocation)
     if (!scriptDir.exists()) {
         System.err.println("script folder not exist: ${scriptDir.getAbsolutePath()}")
     }
-    target.setSelectionRow(-1)
-    DefaultMutableTreeNode data = dirToTreeNode(scriptDir, rootName)
-    var model = new DefaultTreeModel(data)
-    target.setModel(model)
+
+    dirToMenu(target, rootName, scriptDir, onclick)
     println("load ${rootName} done")
+}
+
+void setScriptSelect(JMenu target, JMenuItem menuItem) {
+    for (def i = 0; i < target.getItemCount(); i++) {
+        def item = target.getItem(i)
+        if (item instanceof JMenu) {
+            setScriptSelect(item, menuItem)
+        } else {
+            item.setSelected(false)
+        }
+    }
+    menuItem.setSelected(true)
+}
+
+void setScriptSelect(JMenu target, File file) {
+    for (def i = 0; i < target.getItemCount(); i++) {
+        def item = target.getItem(i)
+        if (item instanceof JMenu) {
+            setScriptSelect(item, file)
+        } else {
+            File scriptFile = item.getClientProperty("file") as File
+            if (scriptFile.getPath().substring(scriptFile.getPath().indexOf('\\', 10) + 1) == file.getPath()) {
+                item.setSelected(true)
+            } else {
+                item.setSelected(false)
+            }
+        }
+    }
 }
 
 /**
@@ -28,17 +56,20 @@ void loadScriptList(JTree target, String rootName, String scriptLocation) {
  * @param rootName
  * @return
  */
-private DefaultMutableTreeNode dirToTreeNode(File dir, String rootName) {
-    DefaultMutableTreeNode data = new DefaultMutableTreeNode(rootName)
+private void dirToMenu(JMenuItem target, String rootName, File dir, ActionListener onclick) {
     for (File file : dir.listFiles()) {
         if (file.isFile()) {
-            var node = new DefaultMutableTreeNode(file.getName())
-            data.add(node)
+            JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(file.getName())
+            menuItem.addActionListener(onclick)
+            menuItem.putClientProperty("root", rootName)
+            menuItem.putClientProperty("file", file)
+            target.add(menuItem)
         } else {
-            data.add(dirToTreeNode(file, file.getName()))
+            JMenu menu = new JMenu(file.getName())
+            target.add(menu)
+            dirToMenu(menu, rootName, file, onclick)
         }
     }
-    return data
 }
 
 /**
