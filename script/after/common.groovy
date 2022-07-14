@@ -24,6 +24,8 @@ if (HttpStatus.SC_OK == response.getStatusLine().getStatusCode()) {
 } else {
     // 非200时输出状态
     println("head:${response.getAllHeaders()}")
+    var responseStr = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8)
+    println("response: " + responseStr)
     println("status: " + response.getStatusLine())
 }
 
