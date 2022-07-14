@@ -30,7 +30,7 @@ String origin = urlSchema.getScheme() + "://" + urlSchema.getHost()
 if (port != -1) {
     origin += ":" + port
 }
-request.setHeader("Origin", origin)
+request.addHeader("Origin", origin)
 // 打印头信息
 println(request.getAllHeaders())
 
