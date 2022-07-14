@@ -211,6 +211,17 @@ public class HttpRunnerController {
         }
     }
 
+    public void reloadSaveData() {
+        ui.jtData.setModel(null);
+
+        try {
+            scriptUtil.execScript(new File("./script/data.groovy"), "loadData", ui.jtData, new File("./data"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println(e.getMessage());
+        }
+    }
+
     /**
      * 重载脚本
      */

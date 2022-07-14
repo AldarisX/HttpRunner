@@ -47,6 +47,12 @@
                   <text value="重载环境"/>
                 </properties>
               </component>
+              <component id="569f1" class="javax.swing.JMenuItem" binding="menuSaveDataReload">
+                <constraints/>
+                <properties>
+                  <text value="重载保存资料"/>
+                </properties>
+              </component>
             </children>
           </grid>
           <grid id="9f92b" class="javax.swing.JMenu" binding="menuScript" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
@@ -346,7 +352,7 @@
           <grid id="807e2" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="500"/>
               </grid>
             </constraints>
@@ -355,7 +361,7 @@
             <children>
               <scrollpane id="2c060">
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                  <grid row="0" column="0" row-span="2" col-span="1" vsize-policy="7" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false">
                     <preferred-size width="250" height="400"/>
                     <maximum-size width="250" height="-1"/>
                   </grid>
@@ -413,32 +419,44 @@
               </scrollpane>
             </children>
           </grid>
-          <scrollpane id="42ea7">
+          <grid id="ff2eb" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                <preferred-size width="960" height="250"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="-1" height="250"/>
               </grid>
             </constraints>
-            <properties>
-              <autoscrolls value="true"/>
-              <horizontalScrollBarPolicy value="30"/>
-              <verticalScrollBarPolicy value="22"/>
-            </properties>
+            <properties/>
             <border type="none"/>
             <children>
-              <component id="4b3dc" class="javax.swing.JTextPane" binding="tpConsole">
-                <constraints/>
+              <scrollpane id="42ea7">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                    <preferred-size width="960" height="250"/>
+                  </grid>
+                </constraints>
                 <properties>
-                  <editable value="false"/>
-                  <text value=""/>
+                  <autoscrolls value="true"/>
+                  <horizontalScrollBarPolicy value="30"/>
+                  <verticalScrollBarPolicy value="22"/>
                 </properties>
-                <clientProperties>
-                  <charset class="java.lang.String" value=""/>
-                  <html.disable class="java.lang.Boolean" value="false"/>
-                </clientProperties>
-              </component>
+                <border type="none"/>
+                <children>
+                  <component id="4b3dc" class="javax.swing.JTextPane" binding="tpConsole">
+                    <constraints/>
+                    <properties>
+                      <editable value="false"/>
+                      <text value=""/>
+                    </properties>
+                    <clientProperties>
+                      <charset class="java.lang.String" value=""/>
+                      <html.disable class="java.lang.Boolean" value="false"/>
+                    </clientProperties>
+                  </component>
+                </children>
+              </scrollpane>
             </children>
-          </scrollpane>
+          </grid>
         </children>
       </grid>
     </children>

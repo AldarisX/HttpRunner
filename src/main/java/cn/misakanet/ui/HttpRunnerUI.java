@@ -15,12 +15,11 @@ import com.intellij.uiDesigner.core.Spacer;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.ItemEvent;
+import java.awt.event.*;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -78,7 +77,8 @@ public class HttpRunnerUI {
     protected JMenuItem menuPluginUnload;
     protected JMenu menuBefore;
     protected JMenu menuAfter;
-    private JTree jtData;
+    protected JTree jtData;
+    private JMenuItem menuSaveDataReload;
     private UIConsoleOutputStream sysOut;
     private UIConsoleOutputStream errOut;
     private Gson gson;
@@ -144,22 +144,76 @@ public class HttpRunnerUI {
         }
     }
 
-    private void btnLoadClick(ActionEvent event) {
-        if (!dataDir.exists()) {
-            dataDir.mkdirs();
-        }
+    public HttpRunnerUI() {
+        // 重定向控制台输出
+        sysOut();
 
-        JFileChooser chooser = new JFileChooser(dataDir);
-        chooser.setDialogTitle("加载一个配置");
-        chooser.setApproveButtonText("加载");
+        // 异步初始化
+        CompletableFuture.runAsync(() -> {
+            jtData.setModel(null);
 
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("json配置文件 (*.json)", "json");
-        chooser.addChoosableFileFilter(filter);
-        chooser.setFileFilter(filter);
+            gson = new Gson();
+            gsonPretty = gson.newBuilder().setPrettyPrinting().create();
 
-        if (chooser.showOpenDialog(rootPanel) == JFileChooser.APPROVE_OPTION) {
-            controller.loadData(chooser.getSelectedFile());
-        }
+            // 初始化脚本引擎,速度很慢
+            scriptUtil = ScriptUtil.getInstance();
+            controller = HttpRunnerController.getInstance();
+            controller.setUI(this);
+
+            // 初始化UI事件与数据
+            CompletableFuture.runAsync(() -> {
+                // 初始化按钮事件
+                initBtnEvent();
+                // 初始化数据
+                initData();
+            });
+            // 加载前置，后置脚本列表
+            CompletableFuture.runAsync(() -> controller.reloadScript());
+
+            // 加载保存的数据
+            CompletableFuture.runAsync(() -> controller.reloadSaveData());
+
+            // 加载插件
+            CompletableFuture.runAsync(() -> {
+                pluginManager = PluginManager.getInstance();
+                pluginManager.setUI(this);
+                pluginManager.loadPlugin();
+            });
+
+            // 非关键的ui操作
+            CompletableFuture.runAsync(() -> {
+                taResult.setCursor(new Cursor(Cursor.TEXT_CURSOR));
+                taResult.addFocusListener(new FocusListener() {
+                    @Override
+                    public void focusGained(FocusEvent e) {
+                        taResult.getCaret().setVisible(true);
+                    }
+
+                    @Override
+                    public void focusLost(FocusEvent e) {
+                        taResult.getCaret().setVisible(true);
+                    }
+                });
+
+                // 控制台的光标设置
+                tpConsole.setCursor(new Cursor(Cursor.TEXT_CURSOR));
+                tpConsole.addFocusListener(new FocusListener() {
+                    @Override
+                    public void focusGained(FocusEvent e) {
+                        tpConsole.getCaret().setVisible(true);
+                    }
+
+                    @Override
+                    public void focusLost(FocusEvent e) {
+                        tpConsole.getCaret().setVisible(true);
+                    }
+                });
+
+                controller.addUndoRedo(tfURL);
+                controller.addUndoRedo(taData);
+            });
+
+        });
     }
 
     private void cbEnvClick(ItemEvent event) {
@@ -205,11 +259,31 @@ public class HttpRunnerUI {
         controller.reloadEnv();
     }
 
+    private void btnLoadClick(ActionEvent event) {
+        loadSaveData();
+//        if (!dataDir.exists()) {
+//            dataDir.mkdirs();
+//        }
+//
+//        JFileChooser chooser = new JFileChooser(dataDir);
+//        chooser.setDialogTitle("加载一个配置");
+//        chooser.setApproveButtonText("加载");
+//
+//        FileNameExtensionFilter filter = new FileNameExtensionFilter("json配置文件 (*.json)", "json");
+//        chooser.addChoosableFileFilter(filter);
+//        chooser.setFileFilter(filter);
+//
+//        if (chooser.showOpenDialog(rootPanel) == JFileChooser.APPROVE_OPTION) {
+//            controller.loadData(chooser.getSelectedFile());
+//        }
+    }
+
     private void initBtnEvent() {
         // 注册菜单
         menuFileSave.addActionListener(this::btnSaveClick);
         menuFileLoad.addActionListener(this::btnLoadClick);
         menuEnvReload.addActionListener(event -> controller.reloadEnv());
+        menuSaveDataReload.addActionListener(event -> controller.reloadSaveData());
         menuScriptClean.addActionListener(event -> scriptUtil.clearCache());
         menuScriptReload.addActionListener(event -> controller.reloadScript());
         menuConsoleClear.addActionListener(event -> controller.clearConsole());
@@ -265,7 +339,6 @@ public class HttpRunnerUI {
             btnSend.setEnabled(false);
             CompletableFuture.runAsync(() -> controller.send());
         });
-
         // 注册主题
         menuThemeIntelliJ.addActionListener(event -> changeTheme(FlatIntelliJLaf.class));
         menuThemeLight.addActionListener(event -> changeTheme(FlatLightLaf.class));
@@ -275,72 +348,28 @@ public class HttpRunnerUI {
 
         // 下拉事件
         cbEnv.addItemListener(this::cbEnvClick);
+
+        // 保存数据双击
+        jtData.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    loadSaveData();
+                }
+            }
+        });
     }
 
-    public HttpRunnerUI() {
-        // 重定向控制台输出
-        sysOut();
-
-        // 异步初始化
-        CompletableFuture.runAsync(() -> {
-            gson = new Gson();
-            gsonPretty = gson.newBuilder().setPrettyPrinting().create();
-
-            // 初始化脚本引擎,速度很慢
-            scriptUtil = ScriptUtil.getInstance();
-            controller = HttpRunnerController.getInstance();
-            controller.setUI(this);
-
-            // 初始化UI事件与数据
-            CompletableFuture.runAsync(() -> {
-                // 初始化按钮事件
-                initBtnEvent();
-                // 初始化数据
-                initData();
-            });
-            CompletableFuture.runAsync(() -> controller.reloadScript());
-
-            // 加载插件
-            CompletableFuture.runAsync(() -> {
-                pluginManager = PluginManager.getInstance();
-                pluginManager.setUI(this);
-                pluginManager.loadPlugin();
-            });
-
-            // 非关键的ui操作
-            CompletableFuture.runAsync(() -> {
-                taResult.setCursor(new Cursor(Cursor.TEXT_CURSOR));
-                taResult.addFocusListener(new FocusListener() {
-                    @Override
-                    public void focusGained(FocusEvent e) {
-                        taResult.getCaret().setVisible(true);
-                    }
-
-                    @Override
-                    public void focusLost(FocusEvent e) {
-                        taResult.getCaret().setVisible(true);
-                    }
-                });
-
-                // 控制台的光标设置
-                tpConsole.setCursor(new Cursor(Cursor.TEXT_CURSOR));
-                tpConsole.addFocusListener(new FocusListener() {
-                    @Override
-                    public void focusGained(FocusEvent e) {
-                        tpConsole.getCaret().setVisible(true);
-                    }
-
-                    @Override
-                    public void focusLost(FocusEvent e) {
-                        tpConsole.getCaret().setVisible(true);
-                    }
-                });
-
-                controller.addUndoRedo(tfURL);
-                controller.addUndoRedo(taData);
-            });
-
-        });
+    private void loadSaveData() {
+        try {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) jtData.getLastSelectedPathComponent();
+            if (node == null) return;
+            String filePath = scriptUtil.execScript(new File("./script/data.groovy"), "getSaveDataPath", node, "data/");
+            File saveFile = new File(filePath);
+            if (saveFile.isFile())
+                controller.loadData(saveFile);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     {
@@ -381,6 +410,9 @@ public class HttpRunnerUI {
         menuEnvReload = new JMenuItem();
         menuEnvReload.setText("重载环境");
         menuFile.add(menuEnvReload);
+        menuSaveDataReload = new JMenuItem();
+        menuSaveDataReload.setText("重载保存资料");
+        menuFile.add(menuSaveDataReload);
         menuScript = new JMenu();
         menuScript.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         menuScript.setText("脚本");
@@ -508,9 +540,9 @@ public class HttpRunnerUI {
         panel3.add(btnScriptReload, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(-1, 500), null, null, 0, false));
+        panel1.add(panel4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, new Dimension(-1, 500), null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel4.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(250, 400), new Dimension(250, -1), 0, false));
+        panel4.add(scrollPane1, new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(250, 400), new Dimension(250, -1), 0, false));
         jtData = new JTree();
         scrollPane1.setViewportView(jtData);
         final JScrollPane scrollPane2 = new JScrollPane();
@@ -528,11 +560,14 @@ public class HttpRunnerUI {
         taResult = new JTextArea();
         taResult.setEditable(false);
         scrollPane3.setViewportView(taResult);
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(panel5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, 250), null, 0, false));
         final JScrollPane scrollPane4 = new JScrollPane();
         scrollPane4.setAutoscrolls(true);
         scrollPane4.setHorizontalScrollBarPolicy(30);
         scrollPane4.setVerticalScrollBarPolicy(22);
-        panel1.add(scrollPane4, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(960, 250), null, 0, false));
+        panel5.add(scrollPane4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(960, 250), null, 0, false));
         tpConsole = new JTextPane();
         tpConsole.setEditable(false);
         tpConsole.setText("");
