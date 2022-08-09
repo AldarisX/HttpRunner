@@ -1,8 +1,4 @@
 import javax.swing.*
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.DefaultTreeModel
-import javax.swing.tree.TreeNode
-import javax.swing.tree.TreePath
 import java.awt.event.ActionListener
 
 /**
@@ -12,7 +8,7 @@ import java.awt.event.ActionListener
  * @param scriptDir
  */
 void loadScriptList(JMenuItem target, String rootName, String scriptLocation, ActionListener onclick) {
-    target.clear()
+    target.removeAll()
     File scriptDir = new File(scriptLocation)
     if (!scriptDir.exists()) {
         System.err.println("script folder not exist: ${scriptDir.getAbsolutePath()}")
@@ -41,7 +37,7 @@ void setScriptSelect(JMenu target, File file) {
             setScriptSelect(item, file)
         } else {
             File scriptFile = item.getClientProperty("file") as File
-            if (scriptFile.getPath().substring(scriptFile.getPath().indexOf('\\', 10) + 1) == file.getPath()) {
+            if (scriptFile.getPath() == file.getPath()) {
                 item.setSelected(true)
             } else {
                 item.setSelected(false)
