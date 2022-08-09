@@ -79,6 +79,8 @@ public class HttpRunnerUI {
     protected JMenu menuAfter;
     protected JTree jtData;
     private JMenuItem menuSaveDataReload;
+
+    private JPopupMenu dataMenu;
     private UIConsoleOutputStream sysOut;
     private UIConsoleOutputStream errOut;
     private Gson gson;
@@ -162,6 +164,7 @@ public class HttpRunnerUI {
 
             // 初始化UI事件与数据
             CompletableFuture.runAsync(() -> {
+                initDataPopMenu();
                 // 初始化按钮事件
                 initBtnEvent();
                 // 初始化数据
@@ -278,6 +281,37 @@ public class HttpRunnerUI {
 //        }
     }
 
+    private void initDataPopMenu() {
+        dataMenu = new JPopupMenu();
+        JMenuItem menuNew = new JMenuItem("新建");
+        JMenuItem menuLoad = new JMenuItem("加载");
+        JMenuItem menuSave = new JMenuItem("保存到次位置");
+
+        dataMenu.add(menuNew);
+        dataMenu.add(menuLoad);
+        dataMenu.add(menuSave);
+
+        menuNew.addActionListener(e -> {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) jtData.getLastSelectedPathComponent();
+            if (node == null) return;
+            try {
+                String filePath = scriptUtil.execScript(new File("./script/data.groovy"), "getSaveDataPath", node, "data/");
+                File file = new File(filePath);
+                DefaultMutableTreeNode childNode = new DefaultMutableTreeNode("xxx");
+                if (file.isDirectory() || node.isRoot()) {
+                    node.add(childNode);
+                } else if (file.isFile()) {
+                    DefaultMutableTreeNode parent = (DefaultMutableTreeNode) node.getParent();
+                    parent.add(childNode);
+                }
+                jtData.repaint();
+                System.out.println(filePath);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+    }
+
     private void initBtnEvent() {
         // 注册菜单
         menuFileSave.addActionListener(this::btnSaveClick);
@@ -354,6 +388,12 @@ public class HttpRunnerUI {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     loadSaveData();
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+
+                    int row = jtData.getClosestRowForLocation(e.getX(), e.getY());
+                    jtData.setSelectionRow(row);
+
+                    dataMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
         });

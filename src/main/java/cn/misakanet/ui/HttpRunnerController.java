@@ -122,14 +122,14 @@ public class HttpRunnerController {
                 param.put("envMap", envMap);
                 param.put("contentType", contentType);
 
-                scriptUtil.execScript(beforeScript.getPath(), param);
+                scriptUtil.execScript(beforeScript, param);
                 long startTime = System.currentTimeMillis();
                 response = httpClient.execute(request);
                 long endTime = System.currentTimeMillis();
                 System.out.println("exec time: " + (endTime - startTime) + "ms");
 
                 param.put("response", response);
-                scriptUtil.execScript(afterScript.getPath(), param);
+                scriptUtil.execScript(afterScript, param);
 
                 response.close();
             } catch (UIException | IOException e) {
@@ -248,7 +248,7 @@ public class HttpRunnerController {
             scriptUtil.execScript(scriptFile, "loadScriptList", ui.menuBefore, "before", "./script/before", onScriptClick);
             scriptUtil.execScript(scriptFile, "loadScriptList", ui.menuAfter, "after", "./script/after", onScriptClick);
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -292,12 +292,12 @@ public class HttpRunnerController {
                 System.err.println("先选择beforeScript");
                 return;
             }
-            configData.addProperty("beforeScript", beforeScript.getPath());
+            configData.addProperty("beforeScript", beforeScript.getName());
             if (afterScript == null) {
                 System.err.println("先选择afterScript");
                 return;
             }
-            configData.addProperty("afterScript", afterScript.getPath());
+            configData.addProperty("afterScript", afterScript.getName());
 
             if (file.exists()) {
                 if (!file.delete()) {
@@ -343,9 +343,9 @@ public class HttpRunnerController {
             } else {
                 ui.taData.setText("");
             }
-            var beforeScript = new File(configData.get("beforeScript").getAsString());
+            beforeScript = new File("./script/before", configData.get("beforeScript").getAsString());
             scriptUtil.execScript(scriptFile, "setScriptSelect", ui.menuBefore, beforeScript);
-            var afterScript = new File(configData.get("afterScript").getAsString());
+            afterScript = new File("./script/after", configData.get("afterScript").getAsString());
             scriptUtil.execScript(scriptFile, "setScriptSelect", ui.menuAfter, afterScript);
 
             System.out.println("加载配置: " + file.getAbsolutePath());
