@@ -1,7 +1,10 @@
 package cn.misakanet.util;
 
+import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -18,10 +21,13 @@ import org.apache.http.ssl.SSLContexts;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 public class RequestUtil {
     private static RequestUtil requestUtil;
@@ -70,9 +76,20 @@ public class RequestUtil {
         return httpClient;
     }
 
+    public <T> CloseableHttpResponse get(String url, List<NameValuePair> params) throws IOException, URISyntaxException {
+        HttpGet httpGet = new HttpGet(url);
+        if (params != null) {
+            URI uri = new URIBuilder(httpGet.getURI())
+                    .addParameters(params)
+                    .build();
+            httpGet.setURI(uri);
+        }
+
+        return httpClient.execute(httpGet);
+    }
+
     public <T> CloseableHttpResponse post(String url, String data) throws IOException {
         HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader("Origin", "123");
         StringEntity entity = new StringEntity(data, StandardCharsets.UTF_8);
         entity.setContentEncoding("UTF-8");
         entity.setContentType("application/json");
