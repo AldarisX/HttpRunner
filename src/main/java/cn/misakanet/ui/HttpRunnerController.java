@@ -130,8 +130,6 @@ public class HttpRunnerController {
 
                 param.put("response", response);
                 scriptUtil.execScript(afterScript, param);
-
-                response.close();
             } catch (UIException | IOException e) {
                 System.err.println(e.getMessage());
             }

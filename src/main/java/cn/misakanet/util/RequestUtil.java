@@ -1,6 +1,10 @@
 package cn.misakanet.util;
 
+import cn.misakanet.Config;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -61,11 +65,23 @@ public class RequestUtil {
                             .register("http", new PlainConnectionSocketFactory())
                             .build();
 
+            var config = Config.getInstance();
+            var proxyHost = config.get("http.proxy.host");
+            var proxyPort = Integer.parseInt(config.get("http.proxy.port", "0"));
+            var proxyType = config.get("http.proxy.type", "http");
+
+            var defaultRequestConfig = RequestConfig.custom();
+            if (StringUtils.isNotBlank(proxyHost)) {
+                HttpHost proxy = new HttpHost(proxyHost, proxyPort, proxyType);
+                defaultRequestConfig.setProxy(proxy);
+            }
+
             BasicHttpClientConnectionManager connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry);
             return HttpClients.custom()
                     .setSSLSocketFactory(sslSF)
                     .setConnectionManager(connectionManager)
                     .setRedirectStrategy(new DefaultRedirectStrategy(new String[]{}))
+                    .setDefaultRequestConfig(defaultRequestConfig.build())
                     .build();
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             throw new RuntimeException(e);
@@ -96,5 +112,10 @@ public class RequestUtil {
         httpPost.setEntity(entity);
 
         return httpClient.execute(httpPost);
+    }
+
+    public void close() throws IOException {
+        httpClient.close();
+        httpClient = create();
     }
 }

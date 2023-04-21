@@ -16,7 +16,11 @@ public interface Encoder {
 
     String encode(String data, String key);
 
+    String encode(String data, String key, String iv);
+
     String decode(String data);
 
     String decode(String data, String key);
+
+    String decode(String data, String key, String iv);
 }
